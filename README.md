@@ -1,5 +1,7 @@
 # coins
 
+## Testing project vue and axios
+
 ## Project setup
 ```
 npm install
