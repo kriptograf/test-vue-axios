@@ -1,12 +1,24 @@
 <template>
   <div id="app">
     <h2>Bitcoin Price Index</h2>
-    <div v-for="currency in info" :key="currency.id" class="currency">
+
+    <section v-if="errored">
+      <p>{{ messageError }}</p>
+    </section>
+
+    <section v-else>
+
+      <div v-if="loading">Loading...</div>
+
+      <div v-else v-for="currency in info" :key="currency.id" class="currency">
         <span class="desc">{{ currency.description }}</span>
         <span class="lighten">
           <span v-html="currency.symbol"></span>{{ currency.rate_float | currencydecimal }}
         </span>
-    </div>
+      </div>
+
+    </section>
+   
   </div>
 </template>
 
@@ -20,8 +32,16 @@ export default {
   name: 'app',
   data(){
     return {
-      info: null /* Определяем переменную, куда будем складывать ответ сервера */
+      info: null, /* Определяем переменную, куда будем складывать ответ сервера */
+      loading: true, /* Флаг видимости сообщения о загрузке */
+      errored: false, /* Флаг ошибки */
+      messageError: null /** Непостредственно сообщение об ошибке */
     };
+  },
+  filters: {
+    currencydecimal (value) {
+      return value.toFixed(2)
+    }
   },
   mounted(){
     /**
@@ -29,12 +49,14 @@ export default {
      * Вызывается сразу после монтирования экземпляра, когда взамен el создан
      */
     axios.get('https://api.coindesk.com/v1/bpi/currentprice.json')
-    .then(response => (this.info = response.data.bpi));
-  },
-  filters: {
-    currencydecimal (value) {
-      return value.toFixed(2)
-    }
+    .then(response => {
+      this.info = response.data.bpi;
+    })
+    .catch(error => {
+      this.messageError = error + '. Were sorry, were not able to retrieve this information at the moment, please try back later';
+      this.errored = true;/** Обрабатываем и выводим ошибки, если они есть */
+    })
+    .finally(() => (this.loading = false));/** Устанавливаем флаг видимости сообщения о загрузке в false */
   }
 }
 </script>
